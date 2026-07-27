@@ -1,0 +1,19 @@
+  // Hitung rekap absensi berdasarkan data absensi log mentah (calculate via COUNTIFS logic analog)
+  const rekapData = React.useMemo(() => {
+    return siswa.map(s => {
+      const siswaAbsensi = absensi.filter(a => a.nis === s.nis && a.tgl >= startDate && a.tgl <= endDate);
+      const H = siswaAbsensi.filter(a => a.status === 'H').length;
+      const S = siswaAbsensi.filter(a => a.status === 'S').length;
+      const I = siswaAbsensi.filter(a => a.status === 'I').length;
+      const A = siswaAbsensi.filter(a => a.status === 'A').length;
+      const T = siswaAbsensi.filter(a => a.status === 'T').length;
+      const total = H + S + I + A + T;
+      const persentase = total > 0 ? Math.round(((H + S + I + T) / total) * 100) : 0;
+      return {
+        nis: s.nis,
+        nama: s.nama,
+        H, S, I, A, T,
+        persentase
+      };
+    });
+  }, [siswa, absensi, startDate, endDate]);

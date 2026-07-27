@@ -1,0 +1,12 @@
+  const handleExportPDF = () => {
+    const columns = ['Tanggal', 'Nama Siswa', 'Pelanggaran', 'Poin', 'Keterangan'];
+    const data = filteredData.map(p => [p.tgl, p.nama, p.jenis, p.poin, p.keterangan || '-']);
+    exportToPDF('Laporan Pelanggaran', columns, data, 'Pelanggaran');
+  };
+
+  const handleExportExcel = () => {
+    const data = filteredData.map(p => ({
+      Tanggal: p.tgl, 'Nama Siswa': p.nama, Pelanggaran: p.jenis, Poin: p.poin, Keterangan: p.keterangan || '-'
+    }));
+    exportToExcel(data, 'Pelanggaran');
+  };

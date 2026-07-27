@@ -1,0 +1,12 @@
+  const handleExportPDF = () => {
+    const columns = ['NIS', 'Nama Siswa', 'H', 'S', 'I', 'A', 'T', '%'];
+    const data = rekapData.map(r => [r.nis, r.nama, r.H, r.S, r.I, r.A, r.T, r.persentase + '%']);
+    exportToPDF(`Laporan Rekap Absensi - ${startDate} sd ${endDate}`, columns, data, `Rekap_Absensi_${startDate}_${endDate}`);
+  };
+
+  const handleExportExcel = () => {
+    const data = rekapData.map(r => ({
+      NIS: r.nis, 'Nama Siswa': r.nama, Hadir: r.H, Sakit: r.S, Izin: r.I, Alpa: r.A, Terlambat: r.T, Persentase: r.persentase + '%'
+    }));
+    exportToExcel(data, `Rekap_Absensi_${startDate}_${endDate}`);
+  };

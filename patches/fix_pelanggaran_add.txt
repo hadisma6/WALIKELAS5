@@ -1,0 +1,13 @@
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            addPelanggaran({
+              nama: fd.get('nama') as string,
+              tgl: fd.get('tgl') as string,
+              jenis: fd.get('jenis') as string,
+              poin: parseInt(fd.get('poin') as string) || 5,
+              keterangan: fd.get('keterangan') as string,
+            });
+            setShowForm(false);
+            Swal.fire({title: 'Tersimpan!', text: 'Data pelanggaran berhasil disimpan.', icon: 'success', confirmButtonColor: '#4f46e5', timer: 2000, showConfirmButton: false});
+          }}

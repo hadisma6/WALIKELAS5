@@ -1,0 +1,12 @@
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            addSiswa({
+              nis: fd.get('nis') as string,
+              nama: fd.get('nama') as string,
+              jk: fd.get('jk') as 'L' | 'P',
+              noWA: fd.get('noWA') as string,
+            });
+            setShowAddForm(false);
+            Swal.fire({title: 'Tersimpan!', text: 'Data siswa berhasil ditambahkan.', icon: 'success', confirmButtonColor: '#4f46e5', timer: 2000, showConfirmButton: false});
+          }}

@@ -1,0 +1,255 @@
+export function AbsensiView() {
+  const { absensi, deleteAbsensi, addAbsensiMassal, siswa } = useDatabase();
+  const [tgl, setTgl] = useState(new Date().toISOString().split('T')[0]);
+  const [absensiState, setAbsensiState] = useState<Record<string, {status: 'H'|'S'|'I'|'A'|'T', alasan: string}>>({});
+  const [activeTab, setActiveTab] = useState<'input' | 'laporan'>('input');
+  
+  // Initialize state when date or siswa changes
+  React.useEffect(() => {
+    const initialState: Record<string, {status: 'H'|'S'|'I'|'A'|'T', alasan: string}> = {};
+    siswa.forEach(s => {
+      // Check if already absensi for this date
+      const dateStr = tgl.replace(/-/g, '');
+      const existing = absensi.find(a => a.id === `${dateStr}-${s.nis}`);
+      
+      if (existing) {
+         initialState[s.nis] = { status: existing.status, alasan: existing.alasan || '' };
+      } else {
+         initialState[s.nis] = { status: 'H', alasan: '' };
+      }
+    });
+    setAbsensiState(initialState);
+  }, [siswa, tgl, absensi]);
+
+  const handleStatusChange = (nis: string, status: 'H'|'S'|'I'|'A'|'T') => {
+    setAbsensiState(prev => ({
+      ...prev,
+      [nis]: { ...prev[nis], status }
+    }));
+  };
+
+  const handleAlasanChange = (nis: string, alasan: string) => {
+    setAbsensiState(prev => ({
+      ...prev,
+      [nis]: { ...prev[nis], alasan }
+    }));
+  };
+
+  const handleSaveMassal = () => {
+    const dataToSave = siswa.map(s => ({
+      id: `${tgl.replace(/-/g, '')}-${s.nis}`,
+      nis: s.nis,
+      tgl,
+      nama: s.nama,
+      status: absensiState[s.nis]?.status || 'H',
+      alasan: absensiState[s.nis]?.alasan || ''
+    }));
+    
+    addAbsensiMassal(dataToSave);
+    alert('Absensi hari ini berhasil disimpan!');
+  };
+
+  const [filterBulan, setFilterBulan] = useState(new Date().toISOString().substring(0, 7));
+
+  const handleExportPDF = () => {
+    const columns = ['NIS', 'Nama Siswa', 'H', 'S', 'I', 'A', 'T'];
+    const data = rekapData.map(r => [r.nis, r.nama, r.H, r.S, r.I, r.A, r.T]);
+    exportToPDF(`Laporan Rekap Absensi - ${filterBulan}`, columns, data, `Rekap_Absensi_${filterBulan}`);
+  };
+
+  const handleExportExcel = () => {
+    const data = rekapData.map(r => ({
+      NIS: r.nis, 'Nama Siswa': r.nama, Hadir: r.H, Sakit: r.S, Izin: r.I, Alpa: r.A, Terlambat: r.T
+    }));
+    exportToExcel(data, `Rekap_Absensi_${filterBulan}`);
+  };
+
+  // Hitung rekap absensi berdasarkan data absensi log mentah (calculate via COUNTIFS logic analog)
+  const rekapData = siswa.map(s => {
+    const siswaAbsensi = absensi.filter(a => a.nis === s.nis && a.tgl.startsWith(filterBulan));
+    return {
+      nis: s.nis,
+      nama: s.nama,
+      H: siswaAbsensi.filter(a => a.status === 'H').length,
+      S: siswaAbsensi.filter(a => a.status === 'S').length,
+      I: siswaAbsensi.filter(a => a.status === 'I').length,
+      A: siswaAbsensi.filter(a => a.status === 'A').length,
+      T: siswaAbsensi.filter(a => a.status === 'T').length,
+    };
+  });
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-8 max-w-5xl mx-auto print:shadow-none print:border-none print:p-0">
+      
+      <div className="flex border-b border-slate-200 mb-6 print:hidden">
+        <button 
+          onClick={() => setActiveTab('input')}
+          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'input' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          Input Absensi Harian
+        </button>
+        <button 
+          onClick={() => setActiveTab('laporan')}
+          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'laporan' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          Laporan / Rekap Bulanan
+        </button>
+      </div>
+
+      {activeTab === 'input' && (
+      <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b pb-4">
+          <div>
+            <h3 className="font-bold text-slate-800 text-lg">Input Absensi Harian (Massal)</h3>
+            <p className="text-xs text-slate-500 mt-1">Sistem default Hadir (H). Ubah status untuk siswa yang tidak hadir.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-bold text-slate-600">Tanggal:</label>
+            <input 
+              type="date" 
+              value={tgl} 
+              onChange={(e) => setTgl(e.target.value)}
+              className="border-slate-300 p-2 rounded-lg text-sm bg-slate-50 border focus:bg-white transition"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto border rounded-xl mb-6">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-slate-100 text-slate-700 text-xs font-bold border-b">
+              <tr>
+                <th className="p-3 w-10 text-center">No</th>
+                <th className="p-3 w-32">NIS</th>
+                <th className="p-3">Nama Siswa</th>
+                <th className="p-3 text-center min-w-[200px]">Status Kehadiran</th>
+                <th className="p-3 w-48">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {siswa.map((s, i) => {
+                const current = absensiState[s.nis] || { status: 'H', alasan: '' };
+                return (
+                  <tr key={s.nis} className={`hover:bg-slate-50 ${current.status !== 'H' ? 'bg-orange-50/30' : ''}`}>
+                    <td className="p-3 text-center font-mono text-slate-500">{i + 1}</td>
+                    <td className="p-3 font-mono text-slate-500">{s.nis}</td>
+                    <td className="p-3 font-bold text-slate-800">{s.nama}</td>
+                    <td className="p-3">
+                      <div className="flex justify-center gap-1 sm:gap-3">
+                        {(['H', 'S', 'I', 'A', 'T'] as const).map(stat => (
+                          <label key={stat} className="cursor-pointer flex items-center gap-1">
+                            <input 
+                              type="radio" 
+                              name={`status-${s.nis}`} 
+                              value={stat} 
+                              checked={current.status === stat}
+                              onChange={() => handleStatusChange(s.nis, stat)}
+                              className={`w-4 h-4 ${
+                                stat === 'H' ? 'text-emerald-500' :
+                                stat === 'S' ? 'text-blue-500' :
+                                stat === 'I' ? 'text-amber-500' :
+                                stat === 'A' ? 'text-rose-500' : 'text-purple-500'
+                              }`}
+                            />
+                            <span className={`font-bold ${
+                              stat === 'H' ? 'text-emerald-600' :
+                              stat === 'S' ? 'text-blue-600' :
+                              stat === 'I' ? 'text-amber-600' :
+                              stat === 'A' ? 'text-rose-600' : 'text-purple-600'
+                            }`}>{stat}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <input 
+                        type="text" 
+                        placeholder="Catatan..." 
+                        value={current.alasan}
+                        onChange={(e) => handleAlasanChange(s.nis, e.target.value)}
+                        className="w-full border border-slate-200 p-1.5 rounded text-xs bg-white focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+              {siswa.length === 0 && (
+                <tr><td colSpan={5} className="p-6 text-center text-slate-400">Belum ada master data siswa. Silahkan ke menu Master Data.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-end gap-3 print:hidden">
+          <button 
+            onClick={handleSaveMassal}
+            disabled={siswa.length === 0}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition"
+          >
+            <Save className="w-5 h-5" /> Simpan Absensi Massal
+          </button>
+        </div>
+      </div>
+      )}
+
+      {activeTab === 'laporan' && (
+      <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b pb-4">
+          <div>
+            <h3 className="font-bold text-slate-800 text-lg">Rekapitulasi Kehadiran Bulanan</h3>
+            <p className="text-xs text-slate-500 mt-1">Pilih bulan untuk melihat rekap kehadiran siswa.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <input 
+              type="month" 
+              value={filterBulan} 
+              onChange={(e) => setFilterBulan(e.target.value)}
+              className="border-slate-300 p-2 rounded-lg text-sm bg-slate-50 border focus:bg-white transition"
+            />
+            <button onClick={handleExportPDF} className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition print:hidden">
+              <FileText className="w-4 h-4" /> PDF
+            </button>
+            <button onClick={handleExportExcel} className="bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition print:hidden">
+              <Download className="w-4 h-4" /> Excel
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto border rounded-xl">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-slate-100 text-slate-700 text-xs font-bold border-b">
+              <tr>
+                <th className="p-3 w-10 text-center">No</th>
+                <th className="p-3 w-32">NIS</th>
+                <th className="p-3">Nama Siswa</th>
+                <th className="p-3 text-center text-emerald-600">Hadir</th>
+                <th className="p-3 text-center text-blue-600">Sakit</th>
+                <th className="p-3 text-center text-amber-600">Izin</th>
+                <th className="p-3 text-center text-rose-600">Alpa</th>
+                <th className="p-3 text-center text-purple-600">Terlambat</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {rekapData.map((r, i) => (
+                <tr key={r.nis} className="hover:bg-slate-50">
+                  <td className="p-3 text-center font-mono text-slate-500">{i + 1}</td>
+                  <td className="p-3 font-mono text-slate-500">{r.nis}</td>
+                  <td className="p-3 font-bold text-slate-800">{r.nama}</td>
+                  <td className="p-3 text-center font-bold text-emerald-600">{r.H}</td>
+                  <td className="p-3 text-center font-bold text-blue-600">{r.S}</td>
+                  <td className="p-3 text-center font-bold text-amber-600">{r.I}</td>
+                  <td className="p-3 text-center font-bold text-rose-600">{r.A}</td>
+                  <td className="p-3 text-center font-bold text-purple-600">{r.T}</td>
+                </tr>
+              ))}
+              {siswa.length === 0 && (
+                <tr><td colSpan={8} className="p-6 text-center text-slate-400">Belum ada master data siswa. Silahkan ke menu Master Data.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      )}
+
+    </div>
+  );
+}

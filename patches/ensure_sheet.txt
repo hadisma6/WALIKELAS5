@@ -1,0 +1,21 @@
+function ensureSheet(name, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(headers);
+  } else {
+    let existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn() || 1).getValues()[0];
+    let added = false;
+    headers.forEach(h => {
+      if (!existingHeaders.includes(h)) {
+        existingHeaders.push(h);
+        added = true;
+      }
+    });
+    if (added) {
+      sheet.getRange(1, 1, 1, existingHeaders.length).setValues([existingHeaders]);
+    }
+  }
+  return sheet;
+}

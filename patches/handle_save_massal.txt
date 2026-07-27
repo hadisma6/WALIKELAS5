@@ -1,0 +1,14 @@
+  const handleSaveMassal = () => {
+    const dataToSave = siswa.map(s => ({
+      id: `${tgl.replace(/-/g, '')}-${s.nis}`,
+      nis: s.nis,
+      tgl,
+      nama: s.nama,
+      status: absensiState[s.nis]?.status || 'H',
+      keterangan: absensiState[s.nis]?.alasan || ''
+    }));
+    
+    addAbsensiMassal(dataToSave);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };

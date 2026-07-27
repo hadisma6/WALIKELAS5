@@ -1,0 +1,14 @@
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            addPrestasi({
+              nama: fd.get('nama') as string,
+              tgl: fd.get('tgl') as string,
+              tingkat: fd.get('tingkat') as string,
+              namaKegiatan: fd.get('namaKegiatan') as string,
+              hasil: fd.get('hasil') as string,
+              poin: parseInt(fd.get('poin') as string) || 10,
+            });
+            setShowForm(false);
+            Swal.fire({title: 'Tersimpan!', text: 'Data prestasi berhasil disimpan.', icon: 'success', confirmButtonColor: '#4f46e5', timer: 2000, showConfirmButton: false});
+          }}

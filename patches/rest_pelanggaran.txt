@@ -1,0 +1,107 @@
+>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nama Siswa</label>
+                <select name="nama" required className="w-full border-slate-300 p-2 rounded-lg text-sm bg-white border">
+                  <option value="">Pilih Siswa...</option>
+                  {siswa.map(s => <option key={s.nama} value={s.nama}>{s.nama}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal</label>
+                <input type="date" name="tgl" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border-slate-300 p-2 rounded-lg text-sm bg-white border" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Jenis Pelanggaran</label>
+                <input type="text" name="jenis" required placeholder="Contoh: Terlambat" className="w-full border-slate-300 p-2 rounded-lg text-sm bg-white border" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Poin Pelanggaran (Angka)</label>
+                <input type="number" name="poin" required defaultValue={5} min={1} className="w-full border-slate-300 p-2 rounded-lg text-sm bg-white border" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Keterangan / Catatan Tambahan (Opsional)</label>
+                <input type="text" name="keterangan" placeholder="Keterangan..." className="w-full border-slate-300 p-2 rounded-lg text-sm bg-white border" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Batal</button>
+              <button type="submit" className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700">Simpan Pelanggaran</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="overflow-x-auto border rounded-xl">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead className="bg-slate-100 text-slate-700 text-xs font-bold border-b">
+            <tr>
+              <th className="p-3 w-10 text-center">No</th>
+              <th className="p-3">Tanggal</th>
+              <th className="p-3">Nama Siswa</th>
+              <th className="p-3">Pelanggaran</th>
+              <th className="p-3 text-center">Poin</th>
+              <th className="p-3">Keterangan</th>
+              <th className="p-3 text-right print:hidden">Aksi</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 print:divide-slate-300 text-xs">
+            {filteredData.map((p, i) => {
+              if (editingId === p.id) {
+                return (
+                  <tr key={`${p.id}-${i}`} className="bg-indigo-50/50">
+                    <td className="p-3 text-center font-mono text-slate-500">{i + 1}</td>
+                    <td className="p-3">
+                      <input type="date" value={editForm.tgl} onChange={e => setEditForm({...editForm, tgl: e.target.value})} className="w-full border p-1.5 rounded text-xs" />
+                    </td>
+                    <td className="p-3">
+                      <select value={editForm.nama} onChange={e => setEditForm({...editForm, nama: e.target.value})} className="w-full border p-1.5 rounded text-xs bg-white">
+                        <option value="">Pilih...</option>
+                        {siswa.map(s => <option key={s.nama} value={s.nama}>{s.nama}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-3">
+                      <input type="text" value={editForm.jenis} onChange={e => setEditForm({...editForm, jenis: e.target.value})} className="w-full border p-1.5 rounded text-xs" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <input type="number" value={editForm.poin} onChange={e => setEditForm({...editForm, poin: parseInt(e.target.value) || 0})} className="w-16 border p-1.5 rounded text-xs text-center mx-auto" />
+                    </td>
+                    <td className="p-3">
+                      <input type="text" value={editForm.keterangan} onChange={e => setEditForm({...editForm, keterangan: e.target.value})} className="w-full border p-1.5 rounded text-xs" />
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={saveEdit} className="text-emerald-600 hover:text-emerald-800 p-1 bg-emerald-100 rounded"><Check className="w-4 h-4" /></button>
+                        <button onClick={() => setEditingId(null)} className="text-slate-500 hover:text-slate-700 p-1 bg-slate-200 rounded"><X className="w-4 h-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              }
+              return (
+              <tr key={`${p.id}-${i}`} className="hover:bg-slate-50">
+                <td className="p-3 text-center font-mono text-slate-500">{i + 1}</td>
+                <td className="p-3 whitespace-nowrap text-slate-500">{new Date(p.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                <td className="p-3 font-bold text-slate-800">{p.nama}</td>
+                <td className="p-3 font-medium text-rose-700">{p.jenis}</td>
+                <td className="p-3 text-center">
+                  <span className="bg-rose-100 text-rose-700 px-2 py-1 rounded-md font-bold text-[10px]">-{p.poin}</span>
+                </td>
+                <td className="p-3 text-slate-600 max-w-[200px] truncate" title={p.keterangan}>{p.keterangan || '-'}</td>
+                <td className="p-3 text-right print:hidden">
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => handleEdit(p)} className="text-indigo-500 hover:text-indigo-700 p-1 transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => deletePelanggaran(p.id)} className="text-rose-500 hover:text-rose-700 p-1 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </tr>
+            )})}
+            {filteredData.length === 0 && (
+              <tr><td colSpan={7} className="p-6 text-center text-slate-400">Belum ada data pelanggaran / tidak ditemukan.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
